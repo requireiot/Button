@@ -4,7 +4,7 @@
  * Created		: 03.10.2019 16:21:28
  * Tabsize		: 4
  *
- * This Revision: $Id: Button.cpp 1237 2021-08-17 10:17:55Z  $
+ * This Revision: $Id: Button.cpp 1300 2021-12-05 13:05:54Z  $
  */
  
 /*
@@ -41,6 +41,12 @@
  * Typically, the polling function `tick()` will be called from a timer interrupt service routine.
  * A pointer to the static method `Button::isr()` defined here can be used as an argument
  * to the `add_task()` function from my `AvrTimers` library.
+ * 
+ * The class detects multiple gestures:
+ * 1. any button press, reported at start/end, via cPressed/cReleased
+ * 2. short button press (duration <1s), reported 200ms after release, via cShortPress
+ * 3. long button press (duration >1s), reported at release, via cLongPress
+ * 4. double press (press <200ms after previous release), reported at release, via cDoublePress
  */ 
 
 #include <inttypes.h>
@@ -50,6 +56,9 @@
 #include <avr/io.h>
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
+
+
+extern "C" unsigned long millis(void);
 
 #include "Button.h"
 
@@ -106,6 +115,8 @@ void Button::isr(void* arg)
  */
 void Button::tick( uint8_t isPressed )
 {
+	mMillis += MS_PER_TICK;
+
 	mState <<= 1;
 	mState |= isPressed ? 1 : 0;
 
@@ -114,14 +125,34 @@ void Button::tick( uint8_t isPressed )
 		cPressed++;
 		isDown = true;
 		holdTime = 0;	// start measuring duration
+		mPending = false;
+
+		mLastPressed = mMillis;
 	}
     // just released? look for e.g. [na na na na 1 0 0 0] pattern
 	if ((mState | ~MASK) == ~RISE) {
 		cReleased++;
 		isDown = false;
+
+		if (holdTime > MIN_LONG_PRESS) {
+			// long press (pressed for more than 1000ms) ?
+			if (cLongPress < UINT16_MAX) cLongPress++;			
+		} else if ((uint32_t)(mLastPressed - mLastReleased) < MAX_DOUBLE_PRESS) {
+			// double press (this start less than 200ms after previous end)?
+			if (cDoublePress < UINT16_MAX) cDoublePress++;
+		} else {
+			// might be a double click, wait and see
+			mPending = true;
+		}
+		mLastReleased = mMillis;
 	}
 	if (isDown && (holdTime < UINT16_MAX-MS_PER_TICK))
 		holdTime += MS_PER_TICK;
+	if (mPending && ((uint32_t)(mMillis - mLastReleased) > MAX_DOUBLE_PRESS)) {
+		//it's not a double click
+		mPending = false;
+		if (cShortPress < UINT16_MAX) cShortPress++;			
+	}
 }
 
 

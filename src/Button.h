@@ -4,7 +4,7 @@
  * Created		: 03-Oct-2019
  * Tabsize		: 4
  *
- * This Revision: $Id: Button.h 1237 2021-08-17 10:17:55Z  $
+ * This Revision: $Id: Button.h 1300 2021-12-05 13:05:54Z  $
  */ 
 
 /*
@@ -29,9 +29,15 @@
 class Button {
 	private:
 		volatile uint8_t	mState;
+		volatile uint32_t	mLastPressed;
+		volatile uint32_t	mLastReleased;
+		volatile uint32_t	mMillis;
+		volatile bool		mPending;
 		
 	public:
-		static const int MS_PER_TICK = 10;	///< recommended poll interval in ms.
+		static const int 		MS_PER_TICK = 10;			//< recommended poll interval in ms.
+		static const uint16_t	MIN_LONG_PRESS = 1000u;		///< minimum long press duration [ms]
+		static const uint16_t	MAX_DOUBLE_PRESS = 200u;	///< max separation (end to start) for double click [ms]
 
 		Button() { init(); }
 		void init();
@@ -43,10 +49,13 @@ class Button {
 
 		static void isr(void* arg);
 		
-		volatile bool		isDown;		///< true if button is currently pressed.
-		volatile uint8_t	cPressed;	///< count # of times debounced button was pressed, can be reset by application.
-		volatile uint8_t	cReleased;	///< count # of times debounced button was released, can be reset by application.
-		volatile uint16_t	holdTime;	///< duration of current button press, in ms.
+		volatile bool		isDown;			///< true if button is currently pressed.
+		volatile uint8_t	cPressed;		///< count # of times debounced button was pressed, can be reset by application.
+		volatile uint8_t	cReleased;		///< count # of times debounced button was released, can be reset by application.
+		volatile uint16_t	holdTime;		///< duration of current button press, in ms.
+		volatile uint8_t	cShortPress;	///< count # of short presses detected, can be reset by application
+		volatile uint8_t	cLongPress;		///< count # of long presses detected, can be reset by application
+		volatile uint8_t	cDoublePress;   ///< count # of double clicks detected, can be reset by application
 };
 
 

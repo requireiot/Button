@@ -91,6 +91,7 @@ extern "C" unsigned long millis(void);
  */
 void Button::init()
 {
+	mMillisPerTick = MS_PER_TICK;
 	mState = 0;
 	isDown = false;
 }
@@ -112,17 +113,18 @@ void Button::isr(void* arg)
 /** 
  * @brief Do debouncing, his function has no knowledge about which port & pin the button is attached to.
  * @param	isPressed	!=0 if physical button is currently pressed
+ * @param   ms_per_tick  milliseconds since last tick
  */
 void Button::tick( uint8_t isPressed )
 {
-	mMillis += MS_PER_TICK;
+	mMillis += mMillisPerTick;
 
 	mState <<= 1;
 	mState |= isPressed ? 1 : 0;
 
     // just pressed? look for e.g. [na na na na 0 1 1 1] pattern 
 	if ((mState & MASK) == RISE) {
-		cPressed++;
+		if (cPressed < UINT8_MAX) cPressed++;
 		isDown = true;
 		holdTime = 0;	// start measuring duration
 		mPending = false;
@@ -131,27 +133,27 @@ void Button::tick( uint8_t isPressed )
 	}
     // just released? look for e.g. [na na na na 1 0 0 0] pattern
 	if ((mState | ~MASK) == ~RISE) {
-		cReleased++;
+		if (cReleased < UINT8_MAX) cReleased++;
 		isDown = false;
 
 		if (holdTime > MIN_LONG_PRESS) {
 			// long press (pressed for more than 1000ms) ?
-			if (cLongPress < UINT16_MAX) cLongPress++;			
+			if (cLongPress < UINT8_MAX) cLongPress++;			
 		} else if ((uint32_t)(mLastPressed - mLastReleased) < MAX_DOUBLE_PRESS) {
 			// double press (this start less than 200ms after previous end)?
-			if (cDoublePress < UINT16_MAX) cDoublePress++;
+			if (cDoublePress < UINT8_MAX) cDoublePress++;
 		} else {
 			// might be a double click, wait and see
 			mPending = true;
 		}
 		mLastReleased = mMillis;
 	}
-	if (isDown && (holdTime < UINT16_MAX-MS_PER_TICK))
-		holdTime += MS_PER_TICK;
+	if (isDown && (holdTime < UINT16_MAX-mMillisPerTick))
+		holdTime += mMillisPerTick;
 	if (mPending && ((uint32_t)(mMillis - mLastReleased) > MAX_DOUBLE_PRESS)) {
 		//it's not a double click
 		mPending = false;
-		if (cShortPress < UINT16_MAX) cShortPress++;			
+		if (cShortPress < UINT8_MAX) cShortPress++;			
 	}
 }
 

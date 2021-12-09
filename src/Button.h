@@ -4,7 +4,7 @@
  * Created		: 03-Oct-2019
  * Tabsize		: 4
  *
- * This Revision: $Id: Button.h 1300 2021-12-05 13:05:54Z  $
+ * This Revision: $Id: Button.h 1301 2021-12-06 16:51:19Z  $
  */ 
 
 /*
@@ -25,7 +25,10 @@
  */
 
 
-/// @brief Base class for debouncing a button, polling the hardware happens elsewhere
+/**
+ * @brief Base class for debouncing a button, polling the hardware happens elsewhere
+ * 
+ */
 class Button {
 	private:
 		volatile uint8_t	mState;
@@ -33,11 +36,15 @@ class Button {
 		volatile uint32_t	mLastReleased;
 		volatile uint32_t	mMillis;
 		volatile bool		mPending;
+				 uint8_t	mMillisPerTick;
 		
 	public:
-		static const int 		MS_PER_TICK = 10;			//< recommended poll interval in ms.
-		static const uint16_t	MIN_LONG_PRESS = 1000u;		///< minimum long press duration [ms]
-		static const uint16_t	MAX_DOUBLE_PRESS = 200u;	///< max separation (end to start) for double click [ms]
+		/// recommended poll interval in ms.
+		static const int 		MS_PER_TICK = 10;			
+		/// minimum long press duration [ms]
+		static const uint16_t	MIN_LONG_PRESS = 1000u;		
+		/// max separation (#1 end to #2 start) for double click [ms]; typically 60-180ms
+		static const uint16_t	MAX_DOUBLE_PRESS = 200u;	
 
 		Button() { init(); }
 		void init();
@@ -46,6 +53,8 @@ class Button {
         void tick( uint8_t isPressed );
 
         virtual bool pressed() { return false; }   // must be instantiated in a derived class by application
+
+		void setMillisPerTick(uint8_t ms) { if (ms) mMillisPerTick=ms; }
 
 		static void isr(void* arg);
 		

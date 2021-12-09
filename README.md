@@ -20,15 +20,20 @@ Member variables let you inquire
 
 From these pieces of information, you can derive detection of higher-level gestures like double click, long press etc.
 
+The class also includes an algorithm for detecting different kinds of gestures. Member variables let you inquire
+- how many times a *short press* has been detected
+- how many times a *long press* has been detected
+- how many times a *double press* has been detected
+
 ## How to use the library
 
  There are 3 ways of using this library:
 
 1. use class ButtonPin, define the port and pin when calling the constructor or `init()`, then call `tick(void)` repeatedly
 
-2. define a class derived from class Button, implementing the `pressed()` method, then call `tick(void)` repeatedly
+2. define a class derived from class Button, implementing the `pressed()` method (which interacts with your hardware and encapsulas the knowledget of how to detect that a button is pressed), then call `tick(void)` repeatedly
 
-3. use class `Button`, just call `tick(uint8_t)` repeatedly, providing the current status of the button contact
+3. use class `Button`, just call `tick(uint8_t t)` repeatedly, providing the current status of the button contact (t!=0 for closed, t==0 for open)
 
 The variants 2 and 3 where the Button class instance itself has no knowledge of which port and pin the button is attached to are particularly useful in combination with my fast [`stdpins.h`](https://github.com/requireiot/stdpins) library for manipulating AVR I/O pins.
 
